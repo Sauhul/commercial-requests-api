@@ -1,138 +1,141 @@
-# API de Solicitudes Comerciales
+# Commercial Requests API
 
-REST API construida con NestJS para administrar solicitudes de seguimiento comercial con control de acceso basado en roles, validación de API Key y manejo completo de errores.
+A REST API built with NestJS for managing commercial follow-up requests. It
+includes role-based access control, API key authentication, input validation,
+and consistent error handling.
 
-> Ejecuta los comandos de esta guía desde el directorio `apirest`, donde se
-> encuentran `package.json` y `docker-compose.yml`.
+> Run the commands in this guide from the `apirest` directory, where
+> `package.json` and `docker-compose.yml` are located.
 
-## Requisitos
+## Requirements
 
-- Node.js 24.15 o superior
+- Node.js 24.15 or later
 - npm
-- Docker con Docker Compose
+- Docker with Docker Compose
 
-## Instalación
+## Installation
 
 ```bash
 npm install
 ```
 
-## Configuración
+## Configuration
 
-### 1. Base de Datos PostgreSQL
+### 1. PostgreSQL database
 
-Inicia PostgreSQL con Docker Compose:
+Start PostgreSQL with Docker Compose:
 
 ```bash
 docker compose up -d postgres
 ```
 
-Compose publica PostgreSQL en el puerto `5433` del equipo y crea la base de
-datos `solicitudes_api`. La aplicación se conecta a `localhost:5433`.
+Compose publishes PostgreSQL on host port `5433` and creates the
+`solicitudes_api` database. The application connects to `localhost:5433`.
 
-Para iniciar también la API en Docker, ejecuta `docker compose up -d --build`.
-En ese caso, Swagger queda disponible en `http://localhost:3000/api`.
+To start the API in Docker as well, run `docker compose up -d --build`.
+Swagger will then be available at `http://localhost:3000/api`.
 
-### 2. Variables de Entorno
+### 2. Environment variables
 
-Copia el archivo de entorno de ejemplo:
+Copy the example environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-`.env.example` contiene la configuración de desarrollo local. Asegúrate de que
-las credenciales de la base de datos coincidan con el servicio de Compose.
+`.env.example` contains the local development configuration. Make sure the
+database credentials match the Compose service.
 
-Configuración local de ejemplo:
+Example local configuration:
 
-| Variable      | Ejemplo                   | Descripción                                       |
-| ------------- | ------------------------- | ------------------------------------------------- |
-| `PORT`        | `3000`                    | Puerto HTTP de la API                             |
-| `API_KEYS`    | `dev-key-001,dev-key-002` | Claves API válidas separadas por comas            |
-| `DB_HOST`     | `localhost`               | Host de PostgreSQL                                |
-| `DB_PORT`     | `5433`                    | Puerto de PostgreSQL publicado por Compose        |
-| `DB_USER`     | `postgres`                | Usuario de base de datos                          |
-| `DB_PASSWORD` | `postgres`                | Debe coincidir con `POSTGRES_PASSWORD` en Compose |
-| `DB_NAME`     | `solicitudes_api`         | Nombre de la base de datos                        |
+| Variable      | Example                   | Description                                         |
+| ------------- | ------------------------- | --------------------------------------------------- |
+| `PORT`        | `3000`                    | API HTTP port                                       |
+| `API_KEYS`    | `dev-key-001,dev-key-002` | Comma-separated valid API keys                     |
+| `DB_HOST`     | `localhost`               | PostgreSQL host                                     |
+| `DB_PORT`     | `5433`                    | PostgreSQL port published by Compose               |
+| `DB_USER`     | `postgres`                | Database user                                       |
+| `DB_PASSWORD` | `postgres`                | Must match `POSTGRES_PASSWORD` in Compose           |
+| `DB_NAME`     | `solicitudes_api`         | Database name                                       |
 
-Las claves y contraseñas de ejemplo son solo para desarrollo local; usa
-credenciales seguras fuera de este entorno.
+The example keys and passwords are for local development only. Use secure
+credentials outside this environment.
 
-### 3. Esquema y migraciones
+### 3. Schema and migrations
 
-TypeORM ejecuta las migraciones pendientes automáticamente al iniciar la API.
-La migración `RequestsAuditMigration` crea las tablas e índices requeridos y
-actualiza una tabla `solicitudes` existente para permitir solicitudes sin
-asesor y agregar el campo de versión. Los cambios de datos e historial se
-guardan dentro de transacciones.
+TypeORM automatically runs pending migrations when the API starts. The
+`RequestsAuditMigration` migration creates the required tables and indexes,
+and updates an existing `solicitudes` table to allow unassigned requests and
+add a version field. Request changes and history events are saved in
+transactions.
 
-Las migraciones se registran en la tabla `migrations`. Antes de desplegar,
-respalda la base de datos y revisa las migraciones pendientes en el entorno de
-destino. No se usa `synchronize`; el esquema se modifica exclusivamente por
-migraciones.
+Migrations are recorded in the `migrations` table. Before deploying, back up
+the database and review pending migrations in the target environment.
+`synchronize` is disabled; the schema is changed exclusively through
+migrations.
 
-## Ejecución
+## Running the application
 
-### Desarrollo
+### Development
 
 ```bash
 npm run start:dev
 ```
 
-### Producción
+### Production
 
 ```bash
 npm run build
 npm run start:prod
 ```
 
-La aplicación estará disponible en `http://localhost:3000` (o en el puerto
-definido por `PORT`).
+The application will be available at `http://localhost:3000` (or on the port
+defined by `PORT`).
 
-## Documentación de API
+## API documentation
 
 Swagger UI: `http://localhost:3000/api`
-Documento OpenAPI: `http://localhost:3000/api-json`
 
-En Swagger, pulsa **Authorize** e introduce una clave válida para `x-api-key`.
-Introduce el usuario de prueba en el header `x-user` de cada operación.
+OpenAPI document: `http://localhost:3000/api-json`
 
-## Usuarios de Prueba
+In Swagger, click **Authorize** and enter a valid `x-api-key`. Provide a test
+user in the `x-user` header for each operation.
 
-| Usuario      | Rol        | Permisos                                                     |
-| ------------ | ---------- | ------------------------------------------------------------ |
-| admin01      | admin      | Ver todas las solicitudes, cambiar estado                    |
-| supervisor01 | supervisor | Ver todas las solicitudes, cambiar estado y asignar asesores |
-| advisor01    | advisor    | Crear solicitudes y ver solo las propias                     |
-| advisor02    | advisor    | Crear solicitudes y ver solo las propias                     |
+## Test users
 
-Solo `admin` y `supervisor` pueden cambiar estados y asignar o reasignar
-solicitudes.
+| User           | Role       | Permissions                                           |
+| -------------- | ---------- | ----------------------------------------------------- |
+| `admin01`      | admin      | View all requests and change their status             |
+| `supervisor01` | supervisor | View all requests, change status, and assign advisors |
+| `advisor01`    | advisor    | Create requests and view only assigned requests       |
+| `advisor02`    | advisor    | Create requests and view only assigned requests       |
 
-## Encabezados Requeridos
+Only `admin` and `supervisor` users can change request status or assign and
+reassign requests.
 
-Todos los endpoints requieren:
+## Required headers
 
-| Encabezado  | Descripción        | Ejemplo     |
-| ----------- | ------------------ | ----------- |
-| `x-api-key` | Clave API válida   | dev-key-001 |
-| `x-user`    | Usuario registrado | admin01     |
+All endpoints require:
+
+| Header      | Description          | Example       |
+| ----------- | -------------------- | ------------- |
+| `x-api-key` | Valid API key        | `dev-key-001` |
+| `x-user`    | Registered user ID   | `admin01`     |
 
 ## Endpoints
 
-| Método | Ruta                        | Descripción                                  |
-| ------ | --------------------------- | -------------------------------------------- |
-| POST   | /solicitudes                | Registrar solicitud y evento inicial         |
-| GET    | /solicitudes                | Filtrar y paginar solicitudes según permisos |
-| GET    | /solicitudes/:id            | Obtener solicitud por ID                     |
-| PATCH  | /solicitudes/:id/asignacion | Asignar o reasignar un asesor                |
-| PATCH  | /solicitudes/:id/estado     | Cambiar estado con control de versión        |
-| GET    | /solicitudes/:id/historial  | Consultar eventos de auditoría               |
+| Method | Route                       | Description                                      |
+| ------ | --------------------------- | ------------------------------------------------ |
+| POST   | `/solicitudes`              | Create a request and its initial history event  |
+| GET    | `/solicitudes`              | Filter and paginate requests according to access |
+| GET    | `/solicitudes/:id`          | Get a request by ID                              |
+| PATCH  | `/solicitudes/:id/asignacion` | Assign or reassign an advisor                   |
+| PATCH  | `/solicitudes/:id/estado`    | Change status with version control               |
+| GET    | `/solicitudes/:id/historial` | Get audit events                                 |
 
-## Ejemplo con curl
+## Examples with curl
 
-### Listar solicitudes
+### List requests
 
 ```bash
 curl -X GET http://localhost:3000/solicitudes \
@@ -140,14 +143,14 @@ curl -X GET http://localhost:3000/solicitudes \
   -H "x-user: admin01"
 ```
 
-También puedes filtrar y paginar. Los valores predeterminados son `page=1` y
-`limit=10`; el límite máximo es 100. Los estados aceptan `PENDING`,
-`IN_PROGRESS`, `RESOLVED` y sus nombres en español (`PENDIENTE`, `EN_GESTION`,
+You can also filter and paginate results. Defaults are `page=1` and
+`limit=10`; the maximum limit is 100. Status values can be `PENDING`,
+`IN_PROGRESS`, `RESOLVED`, or their Spanish names (`PENDIENTE`, `EN_GESTION`,
 `RESUELTA`).
 
-La respuesta de listado incluye `items` y `pagination` (`page`, `limit`,
-`total` y `totalPages`), dentro del envoltorio estándar `{ "success": true,
-"data": ... }`.
+The list response includes `items` and `pagination` (`page`, `limit`, `total`,
+and `totalPages`) inside the standard `{ "success": true, "data": ... }`
+envelope.
 
 ```bash
 curl -G http://localhost:3000/solicitudes \
@@ -159,20 +162,20 @@ curl -G http://localhost:3000/solicitudes \
   --data-urlencode "limit=10"
 ```
 
-### Crear solicitud
+### Create a request
 
 ```bash
 curl -X POST http://localhost:3000/solicitudes \
   -H "x-api-key: dev-key-001" \
   -H "x-user: advisor01" \
   -H "Content-Type: application/json" \
-  -d '{"cliente": "Empresa XYZ", "descripcion": "Solicitud de cotización"}'
+  -d '{"cliente": "XYZ Company", "descripcion": "Quotation request"}'
 ```
 
-### Cambiar estado
+### Change request status
 
-Reemplaza `1` por un ID existente. Las transiciones deben hacerse en orden:
-`PENDING` → `IN_PROGRESS` → `RESOLVED`.
+Replace `1` with an existing ID. Status transitions must be performed in
+order: `PENDING` → `IN_PROGRESS` → `RESOLVED`.
 
 ```bash
 curl -X PATCH http://localhost:3000/solicitudes/1/estado \
@@ -182,11 +185,11 @@ curl -X PATCH http://localhost:3000/solicitudes/1/estado \
   -d '{"estado": "IN_PROGRESS", "versionEsperada": 1}'
 ```
 
-Cada modificación exitosa incrementa la versión. Envía la versión más reciente
-en los cambios siguientes; si está desactualizada, la API responde `409
-Conflict`. La versión actual se devuelve junto con la solicitud.
+Each successful update increments the version. Send the latest version with
+subsequent changes; if it is stale, the API returns `409 Conflict`. The
+current version is included in the request response.
 
-### Asignar un asesor
+### Assign an advisor
 
 ```bash
 curl -X PATCH http://localhost:3000/solicitudes/1/asignacion \
@@ -196,7 +199,7 @@ curl -X PATCH http://localhost:3000/solicitudes/1/asignacion \
   -d '{"asesorId": "advisor02"}'
 ```
 
-### Consultar historial
+### Get request history
 
 ```bash
 curl http://localhost:3000/solicitudes/1/historial \
@@ -204,82 +207,83 @@ curl http://localhost:3000/solicitudes/1/historial \
   -H "x-user: supervisor01"
 ```
 
-## Estados de Solicitud
+## Request statuses
 
 - **PENDING**: Initial status
-- **IN_PROGRESS**: Being reviewed
+- **IN_PROGRESS**: Under review
 - **RESOLVED**: Completed
 
-### Transiciones Válidas
+### Valid transitions
 
-```
+```text
 PENDING → IN_PROGRESS → RESOLVED
 ```
 
-Restricciones:
+Restrictions:
 
-- No se puede pasar directamente de PENDING a RESOLVED
-- No se puede reabrir una solicitud RESOLVED
-- Solo supervisores y administradores pueden cambiar el estado
+- A request cannot move directly from `PENDING` to `RESOLVED`.
+- A `RESOLVED` request cannot be reopened.
+- Only supervisors and administrators can change request status.
 
-## Reglas de Negocio
+## Business rules
 
-### RN-01: Registro de Solicitudes
+### RN-01: Request creation
 
-- Cualquier usuario identificado puede registrar una solicitud
-- El estado inicial es siempre PENDING
-- Si crea la solicitud un asesor, se asigna a ese usuario; si la crea un admin
-  o supervisor, queda sin asignación.
+- Any authenticated user can create a request.
+- The initial status is always `PENDING`.
+- Requests created by an advisor are assigned to that advisor. Requests
+  created by an admin or supervisor remain unassigned.
 
-### RN-02: Consulta de Solicitudes
+### RN-02: Request access
 
-- Admin y supervisor ven todas las solicitudes
-- Asesor solo ve sus propias solicitudes
-- La restricción se aplica en las consultas de TypeORM
+- Admins and supervisors can view all requests.
+- Advisors can only view requests assigned to them.
+- This restriction is applied in TypeORM queries.
 
-### RN-03: Cambio de Estado
+### RN-03: Status changes
 
-- Solo admin y supervisor pueden cambiar el estado de las solicitudes
-- Transiciones deben ser válidas
+- Only admins and supervisors can change request status.
+- Status transitions must be valid.
 
-### RN-04: Protección de API
+### RN-04: API protection
 
-- Todos los endpoints requieren x-api-key válida
-- Múltiples claves configurables por entorno
+- All endpoints require a valid `x-api-key`.
+- Multiple API keys can be configured through environment variables.
 
-### RN-05: Validación de Entradas
+### RN-05: Input validation
 
-- Cliente y descripción son obligatorios
-- Los campos no deben estar vacíos
-- El estado debe ser válido en operaciones de cambio
+- Client and description are required.
+- Fields cannot be empty.
+- Status values must be valid when updating a request.
 
-### RN-06: Respuestas y Errores
+### RN-06: Responses and errors
 
-- Respuestas exitosas con formato: `{ "success": true, "data": ... }`
-- Errores normalizados con código HTTP apropiado
+- Successful responses use the format `{ "success": true, "data": ... }`.
+- Errors are normalized and use the appropriate HTTP status code.
 
-### Reglas de esta etapa
+### Rules added in this stage
 
-- Solo admins y supervisores pueden asignar/reasignar asesores o cambiar
-  estados; un asesor solo consulta las solicitudes que tiene asignadas.
-- Cada creación, asignación/reasignación y cambio de estado se guarda como un
-  evento de historial persistente.
-- El estado y el evento relacionado se escriben dentro de la misma transacción.
-- Los cambios de estado requieren `versionEsperada`; una versión desactualizada
-  devuelve `409 Conflict`.
-- `GET /solicitudes` admite `estado`, `asesor`, `cliente`, `desde`, `hasta`,
-  `page` y `limit`, y responde con `items` y metadatos de paginación.
+- Only admins and supervisors can assign or reassign advisors or change
+  statuses. Advisors can only view requests currently assigned to them.
+- Every creation, assignment/reassignment, and status change is recorded as a
+  persistent history event.
+- A status change and its related history event are saved in the same
+  transaction.
+- Status changes require `versionEsperada`; a stale version returns
+  `409 Conflict`.
+- `GET /solicitudes` supports `estado`, `asesor`, `cliente`, `desde`, `hasta`,
+  `page`, and `limit`, and returns `items` with pagination metadata.
 
-## Estructura principal
+## Project structure
 
-```
+```text
 src/
 ├── database/
 │   └── migrations/
 │       └── requests-audit.migration.ts
 ├── app/
 │   ├── app.module.ts
-│   └── configure-app.ts       # Validación y configuración de Swagger
+│   └── configure-app.ts       # Validation and Swagger configuration
 ├── common/
 │   ├── constants/
 │   │   └── users.constants.ts
@@ -309,50 +313,49 @@ src/
 │   └── requests.service.ts
 └── main.ts
 test/
-└── app.e2e-spec.ts            # Pruebas HTTP con PostgreSQL/TypeORM
+└── app.e2e-spec.ts            # HTTP tests with PostgreSQL/TypeORM
 ```
 
 ## Scripts
 
 ```bash
-npm run build       # Compilar
-npm run start       # Ejecutar NestJS
-npm run start:dev   # Desarrollo con recarga
-npm run format      # Formatear
-npm run lint        # Ejecutar linter
-npm run test:e2e    # Pruebas E2E con PostgreSQL/TypeORM
+npm run build       # Build
+npm run start       # Run NestJS
+npm run start:dev   # Development with hot reload
+npm run format      # Format source files
+npm run lint        # Run the linter
+npm run test:e2e    # E2E tests with PostgreSQL/TypeORM
 ```
 
-### Ejecutar pruebas E2E
+### Run E2E tests
 
-Con PostgreSQL iniciado, `.env` apuntando al puerto publicado `5433` y una base
-de datos que pueda modificarse:
+With PostgreSQL running, `.env` pointing to the published `5433` port, and a
+database that can be modified:
 
 ```bash
 npm run test:e2e
 ```
 
-Las pruebas levantan la aplicación NestJS, hacen solicitudes HTTP y verifican
-la persistencia mediante TypeORM. Crean datos con prefijo `e2e-` y eliminan
-únicamente esas solicitudes al finalizar. La aplicación puede ejecutar
-migraciones pendientes en esta base; por eso no uses una base de producción.
+The tests start the NestJS application, send HTTP requests, and verify
+persistence through TypeORM. They create data with the `e2e-` prefix and
+delete only those requests when finished. The application may run pending
+migrations against this database, so do not use a production database.
 
-## Notas
+## Notes
 
-- Sistema de usuarios en memoria (propósitos académicos)
-- Sin JWT ni sesiones
-- TypeORM con PostgreSQL
-- Las migraciones TypeORM se ejecutan automáticamente; `synchronize` está
-  desactivado
-- Decoradores personalizados para roles y usuario actual
-- Guards para validación de API Key, usuario y autorización
-- Interceptor para normalizar respuestas
-- Exception Filter para normalizar errores
-- Documentación completa con Swagger/OpenAPI
+- The user system is in memory (for academic/demo purposes).
+- No JWT or sessions are implemented.
+- TypeORM uses PostgreSQL.
+- TypeORM migrations run automatically; `synchronize` is disabled.
+- Custom decorators provide access to roles and the current user.
+- Guards validate API keys, users, and authorization.
+- An interceptor normalizes successful responses.
+- An exception filter normalizes errors.
+- API documentation is available through Swagger/OpenAPI.
 
-## Detener servicios
+## Stopping services
 
 ```bash
-# Detén la API con Ctrl+C en su terminal.
+# Stop the API with Ctrl+C in its terminal.
 docker compose stop postgres
 ```
